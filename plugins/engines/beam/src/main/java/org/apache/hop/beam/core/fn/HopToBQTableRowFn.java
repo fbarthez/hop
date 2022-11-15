@@ -17,12 +17,16 @@
 
 package org.apache.hop.beam.core.fn;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.services.bigquery.model.TableRow;
+
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.hop.beam.core.BeamHop;
 import org.apache.hop.beam.core.HopRow;
+import org.apache.hop.core.json.HopJson;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.JsonRowMeta;
@@ -31,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 public class HopToBQTableRowFn implements SerializableFunction<HopRow, TableRow> {
 
@@ -106,6 +110,20 @@ public class HopToBQTableRowFn implements SerializableFunction<HopRow, TableRow>
                 tableRow.put(valueMeta.getName(), Math.round(valueMeta.getNumber(valueData) / 1000));
               } else {
                 tableRow.put(valueMeta.getName(), valueMeta.getNumber(valueData));
+              }
+              break;
+            case 11:
+              // ValueMetaJson.TYPE_JSON
+              if (valueData instanceof String) {
+                ObjectMapper mapper = HopJson.newMapper();
+                JsonNode node = mapper.readTree((String) valueData);
+                if (node.isArray()) {
+                  tableRow.put(valueMeta.getName(), mapper.convertValue(node, ArrayList.class));
+                } else {
+                  tableRow.put(valueMeta.getName(), mapper.convertValue(node, Object.class));
+                }
+              } else {
+                  tableRow.put(valueMeta.getName(), valueData);
               }
               break;
             default:

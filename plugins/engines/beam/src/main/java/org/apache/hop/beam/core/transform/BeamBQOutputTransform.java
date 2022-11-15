@@ -126,6 +126,10 @@ public class BeamBQOutputTransform extends PTransform<PCollection<HopRow>, PDone
           case IValueMeta.TYPE_TIMESTAMP:
             schemaField.setType("TIMESTAMP");
             break;
+          case 11:
+         	// ValueMetaJson.TYPE_JSON
+            schemaField.setType("STRUCT");
+            break;
           default:
             throw new RuntimeException(
                 "Conversion from Hop value "
